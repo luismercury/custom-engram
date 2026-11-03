@@ -56,3 +56,29 @@ func TestExportToObsidian(t *testing.T) {
 		t.Errorf("Expected json file at %s", jsonPath)
 	}
 }
+
+func TestExportSingleObservation(t *testing.T) {
+	tempVault, err := os.MkdirTemp("", "vault-single-*")
+	if err != nil {
+		t.Fatalf("Temp dir error: %v", err)
+	}
+	defer os.RemoveAll(tempVault)
+
+	obs := &store.Observation{
+		ID:       "test-id-1234",
+		Title:    "Clean Code Function",
+		Content:  "Functions should do one thing.",
+		Type:     "pattern",
+		Scope:    "project",
+		TopicKey: "clean-code/functions",
+	}
+
+	if err := ExportSingleObservation(obs, "my-test-proj", tempVault); err != nil {
+		t.Fatalf("ExportSingleObservation failed: %v", err)
+	}
+
+	targetPath := filepath.Join(tempVault, "my-test-proj", "Observations", "Clean Code Function.md")
+	if _, err := os.Stat(targetPath); err != nil {
+		t.Errorf("Expected note at %s, got: %v", targetPath, err)
+	}
+}

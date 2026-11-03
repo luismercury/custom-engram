@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"custom-engram/internal/exporter"
 	"custom-engram/internal/project"
 	"custom-engram/internal/search"
 	"custom-engram/internal/store"
@@ -320,6 +321,9 @@ func (s *Server) handleSave() mcpserver.ToolHandlerFunc {
 			return mcp.NewToolResultError(fmt.Sprintf("failed to save observation: %v", err)), nil
 		}
 
+		// Real-time unidirectional export to Obsidian if vault is configured
+		_ = exporter.ExportSingleObservation(obs, proj.Name, "")
+
 		// Asynchronously or quickly generate embedding if available
 		if s.embedder != nil && s.embedder.IsAvailable(ctx) {
 			textToEmbed := fmt.Sprintf("%s\n%s", title, content)
@@ -611,6 +615,13 @@ func (s *Server) handleUpdate() mcpserver.ToolHandlerFunc {
 			if vec, err := s.embedder.Embed(ctx, textToEmbed); err == nil && len(vec) > 0 {
 				_ = s.store.SaveEmbedding(updated.ID, s.embedder.ModelName(), vec)
 			}
+		}
+
+		// Real-time unidirectional export to Obsidian if vault is configured
+		if proj, err := s.store.GetProjectByID(updated.ProjectID); err == nil && proj != nil {
+			_ = exporter.ExportSingleObservation(updated, proj.Name, "")
+		} else {
+			_ = exporter.ExportSingleObservation(updated, "", "")
 		}
 
 		data, _ := json.Marshal(updated)

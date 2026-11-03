@@ -200,6 +200,9 @@ func runSave(args []string) {
 		os.Exit(1)
 	}
 
+	// Real-time unidirectional export to Obsidian if vault is configured
+	_ = exporter.ExportSingleObservation(obs, proj.Name, "")
+
 	// Try embedding
 	ctx := context.Background()
 	embedder := search.DetectEmbedder(ctx)

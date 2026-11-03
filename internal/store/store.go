@@ -168,6 +168,24 @@ func (s *Store) GetProjectByName(name string) (*Project, error) {
 	return &p, nil
 }
 
+func (s *Store) GetProjectByID(id string) (*Project, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var p Project
+	var createdAt, updatedAt string
+	err := s.db.QueryRow(
+		`SELECT id, name, COALESCE(root_path, ''), created_at, updated_at FROM projects WHERE id = ?`,
+		id,
+	).Scan(&p.ID, &p.Name, &p.RootPath, &createdAt, &updatedAt)
+	if err != nil {
+		return nil, err
+	}
+	p.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+	p.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
+	return &p, nil
+}
+
 func (s *Store) ListProjects() ([]Project, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
